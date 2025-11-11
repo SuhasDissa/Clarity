@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>top.suhasdissa.Clarity</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Clarity</name>
+  <summary>Convert documents to Markdown format</summary>
+
+  <description>
+    <p>
+      Clarity is a simple and elegant desktop application for converting various document formats to Markdown.
+    </p>
+    <p>
+      It supports converting:
+    </p>
+    <ul>
+      <li>Microsoft Word documents (.docx)</li>
+      <li>PDF files (.pdf)</li>
+      <li>PowerPoint presentations (.pptx)</li>
+      <li>Excel spreadsheets (.xlsx)</li>
+      <li>HTML files (.html)</li>
+      <li>And more!</li>
+    </ul>
+    <p>
+      Simply open a document, click convert, and save your Markdown file. Clarity uses Microsoft's markitdown library for accurate and reliable conversions.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">top.suhasdissa.Clarity.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main window</caption>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/SuhasDissa/Clarity</url>
+  <url type="bugtracker">https://github.com/SuhasDissa/Clarity/issues</url>
+
+  <developer_name>Suhas Dissa</developer_name>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="1.0.0" date="2025-11-11">
+      <description>
+        <p>Initial release of Clarity</p>
+        <ul>
+          <li>Convert documents to Markdown format</li>
+          <li>Support for multiple document formats</li>
+          <li>Modern and adaptive user interface</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+</component>

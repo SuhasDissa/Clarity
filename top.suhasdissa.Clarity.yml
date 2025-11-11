@@ -1,0 +1,45 @@
+app-id: top.suhasdissa.Clarity
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+command: clarity
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+  - --filesystem=home
+
+modules:
+  # Python dependencies for markitdown
+  - name: python3-dependencies
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "markitdown[all]" --no-build-isolation
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/54/db/f102c76ac34fc0e4e11c3a825e3733dd16729457b9d82e7c1e1797b0ae5e/markitdown-0.0.1a2-py3-none-any.whl
+        sha256: 2b7ee1e6f5f8f5b4e2e11c3a825e3733dd16729457b9d82e7c1e1797b0ae5e1e
+
+      # Add additional dependencies as needed for markitdown[all]
+      - type: file
+        url: https://files.pythonhosted.org/packages/d6/af/3e4b8a402617c2ebf2d64f6d0e1d1c7d1b6e2a9c9e4e4d3e3e3e3e3e3e3e/beautifulsoup4-4.12.3-py3-none-any.whl
+        sha256: b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed
+        x-checker-data:
+          type: pypi
+          name: beautifulsoup4
+
+  # Main application
+  - name: clarity
+    buildsystem: simple
+    build-commands:
+      - install -D main.py ${FLATPAK_DEST}/bin/clarity
+      - chmod +x ${FLATPAK_DEST}/bin/clarity
+      - cp -r src ${FLATPAK_DEST}/lib/python3.11/site-packages/
+      - install -Dm644 data/top.suhasdissa.Clarity.desktop ${FLATPAK_DEST}/share/applications/top.suhasdissa.Clarity.desktop
+      - install -Dm644 data/top.suhasdissa.Clarity.metainfo.xml ${FLATPAK_DEST}/share/metainfo/top.suhasdissa.Clarity.metainfo.xml
+      - install -Dm644 data/icons/top.suhasdissa.Clarity.svg ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/top.suhasdissa.Clarity.svg
+    sources:
+      - type: dir
+        path: .

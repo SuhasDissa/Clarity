@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Clarity
+Comment=Convert documents to Markdown format
+Exec=clarity
+Icon=top.suhasdissa.Clarity
+Terminal=false
+Type=Application
+Categories=Utility;Office;
+Keywords=markdown;converter;document;
+StartupNotify=true
