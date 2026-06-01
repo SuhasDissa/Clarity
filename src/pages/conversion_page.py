@@ -67,16 +67,24 @@ class ConversionPage(Gtk.Box):
 
         self.append(button_box)
 
-    def update_file_info(self, file_path):
+    def update_file_info(self, source):
         """
-        Update the displayed file information.
+        Update the displayed source information.
 
         Args:
-            file_path: Path to the selected file
+            source: Path to the selected file, or a URL to convert
         """
-        if file_path:
-            self.file_row.set_title(os.path.basename(file_path))
-            self.file_row.set_subtitle(file_path)
+        if not source:
+            return
+
+        if source.startswith("http://") or source.startswith("https://"):
+            self.file_group.set_title("Selected URL")
+            self.file_row.set_title(source)
+            self.file_row.set_subtitle("Web source")
+        else:
+            self.file_group.set_title("Selected File")
+            self.file_row.set_title(os.path.basename(source))
+            self.file_row.set_subtitle(source)
 
     def set_converting(self, is_converting):
         """

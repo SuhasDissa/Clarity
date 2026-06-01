@@ -1,2 +1,1 @@
-markitdown[all]
-PyGObject
+markitdown[pdf,pptx,docx,xlsx,xls,audio-transcription,youtube-transcription]==0.1.6

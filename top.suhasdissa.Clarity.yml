@@ -1,6 +1,6 @@
 app-id: top.suhasdissa.Clarity
 runtime: org.gnome.Platform
-runtime-version: '47'
+runtime-version: '49'
 sdk: org.gnome.Sdk
 command: clarity
 finish-args:
@@ -9,26 +9,47 @@ finish-args:
   - --socket=wayland
   - --device=dri
   - --filesystem=home
+  # Needed for converting URLs/YouTube videos and for audio speech transcription
+  - --share=network
+  # markitdown only trusts exiftool from well-known system paths; point it at
+  # our bundled copy in /app/bin explicitly.
+  - --env=EXIFTOOL_PATH=/app/bin/exiftool
+build-options:
+  env:
+    - PIP_PREFIX=/app
 
 modules:
-  # Python dependencies for markitdown
-  - name: python3-dependencies
+  # Python dependencies for markitdown - using offline sources
+  - pypi-dependencies.json
+
+  # Perl interpreter (not in the runtime) - required to run exiftool
+  - name: perl
     buildsystem: simple
     build-commands:
-      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
-        --prefix=${FLATPAK_DEST} "markitdown[all]" --no-build-isolation
+      - ./Configure -des -Dprefix=${FLATPAK_DEST} -Dusethreads -Duseshrplib
+        -Dman1dir=none -Dman3dir=none
+      - make -j$(nproc)
+      - make install
+      # Perl installs its extension .so files read-only; make them writable so
+      # flatpak-builder's debuginfo stripping (eu-strip) can process them.
+      - chmod -R u+w ${FLATPAK_DEST}/lib/perl5
     sources:
-      - type: file
-        url: https://files.pythonhosted.org/packages/54/db/f102c76ac34fc0e4e11c3a825e3733dd16729457b9d82e7c1e1797b0ae5e/markitdown-0.0.1a2-py3-none-any.whl
-        sha256: 2b7ee1e6f5f8f5b4e2e11c3a825e3733dd16729457b9d82e7c1e1797b0ae5e1e
+      - type: archive
+        url: https://www.cpan.org/src/5.0/perl-5.42.2.tar.gz
+        sha256: 9384e8deb75b7b1695e5637971b752281aaecd025a3d5d4734d33c1d0adfee47
+    cleanup:
+      - '/lib/perl5/*/pod'
 
-      # Add additional dependencies as needed for markitdown[all]
-      - type: file
-        url: https://files.pythonhosted.org/packages/d6/af/3e4b8a402617c2ebf2d64f6d0e1d1c7d1b6e2a9c9e4e4d3e3e3e3e3e3e3e/beautifulsoup4-4.12.3-py3-none-any.whl
-        sha256: b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed
-        x-checker-data:
-          type: pypi
-          name: beautifulsoup4
+  # exiftool - extracts EXIF/metadata from images and audio
+  - name: exiftool
+    buildsystem: simple
+    build-commands:
+      - ${FLATPAK_DEST}/bin/perl Makefile.PL
+      - make install
+    sources:
+      - type: archive
+        url: https://cpan.metacpan.org/authors/id/E/EX/EXIFTOOL/Image-ExifTool-13.55.tar.gz
+        sha256: 5f4c81d34ad406538c2871ad72dbfceb5d9b412b2f16cbbeb4d712d270846667
 
   # Main application
   - name: clarity
@@ -36,7 +57,7 @@ modules:
     build-commands:
       - install -D main.py ${FLATPAK_DEST}/bin/clarity
       - chmod +x ${FLATPAK_DEST}/bin/clarity
-      - cp -r src ${FLATPAK_DEST}/lib/python3.11/site-packages/
+      - cp -r src ${FLATPAK_DEST}/lib/python3.13/site-packages/
       - install -Dm644 data/top.suhasdissa.Clarity.desktop ${FLATPAK_DEST}/share/applications/top.suhasdissa.Clarity.desktop
       - install -Dm644 data/top.suhasdissa.Clarity.metainfo.xml ${FLATPAK_DEST}/share/metainfo/top.suhasdissa.Clarity.metainfo.xml
       - install -Dm644 data/icons/top.suhasdissa.Clarity.svg ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/top.suhasdissa.Clarity.svg

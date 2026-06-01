@@ -52,7 +52,10 @@ class ClarityWindow(Adw.ApplicationWindow):
     def _create_pages(self):
         """Create all pages and add them to the stack."""
         # Create welcome page
-        self.welcome_page = create_welcome_page(on_open_clicked=self.on_open_file_clicked)
+        self.welcome_page = create_welcome_page(
+            on_open_clicked=self.on_open_file_clicked,
+            on_url_clicked=self.on_open_url_clicked
+        )
         self.content_stack.add_named(self.welcome_page, "welcome")
 
         # Create conversion page
@@ -81,16 +84,33 @@ class ClarityWindow(Adw.ApplicationWindow):
         dialog.add_button("_Cancel", Gtk.ResponseType.CANCEL)
         dialog.add_button("_Open", Gtk.ResponseType.ACCEPT)
 
-        # Add file filters
+        # Supported file types, grouped by category. markitdown also handles
+        # the contents of these via OCR / transcription / metadata extraction.
+        categories = [
+            ("Documents", ["pdf", "docx", "doc", "pptx", "ppt", "epub"]),
+            ("Spreadsheets", ["xlsx", "xls", "csv", "tsv"]),
+            ("Images", ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp"]),
+            ("Audio", ["mp3", "wav", "m4a", "flac", "ogg", "aac"]),
+            ("Web pages", ["html", "htm"]),
+            ("Text & data", ["txt", "md", "markdown", "json", "xml"]),
+            ("Archives", ["zip"]),
+        ]
+
+        # Combined "all supported" filter, shown first as the default.
         filter_all = Gtk.FileFilter()
-        filter_all.set_name("All Supported Documents")
-        filter_all.add_pattern("*.docx")
-        filter_all.add_pattern("*.pdf")
-        filter_all.add_pattern("*.pptx")
-        filter_all.add_pattern("*.xlsx")
-        filter_all.add_pattern("*.html")
-        filter_all.add_pattern("*.txt")
+        filter_all.set_name("All Supported Files")
+        for _name, extensions in categories:
+            for ext in extensions:
+                filter_all.add_pattern(f"*.{ext}")
         dialog.add_filter(filter_all)
+
+        # Per-category filters for narrowing the view.
+        for name, extensions in categories:
+            file_filter = Gtk.FileFilter()
+            file_filter.set_name(name)
+            for ext in extensions:
+                file_filter.add_pattern(f"*.{ext}")
+            dialog.add_filter(file_filter)
 
         filter_any = Gtk.FileFilter()
         filter_any.set_name("All Files")
@@ -99,6 +119,45 @@ class ClarityWindow(Adw.ApplicationWindow):
 
         dialog.connect("response", self.on_open_response)
         dialog.show()
+
+    def on_open_url_clicked(self, button):
+        """Handle 'Convert from URL' button click (e.g. YouTube, web pages)."""
+        dialog = Adw.MessageDialog(
+            transient_for=self,
+            modal=True,
+            heading="Convert from URL",
+            body="Enter the address of a YouTube video or web page to convert."
+        )
+
+        entry = Gtk.Entry()
+        entry.set_placeholder_text("https://...")
+        entry.set_input_purpose(Gtk.InputPurpose.URL)
+        entry.set_activates_default(True)
+        dialog.set_extra_child(entry)
+
+        dialog.add_response("cancel", "_Cancel")
+        dialog.add_response("convert", "_Convert")
+        dialog.set_response_appearance("convert", Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response("convert")
+        dialog.set_close_response("cancel")
+
+        dialog.connect("response", self.on_url_response, entry)
+        dialog.present()
+
+    def on_url_response(self, dialog, response, entry):
+        """Handle the URL entry dialog response."""
+        if response == "convert":
+            url = entry.get_text().strip()
+            if not url:
+                self.show_toast("No URL entered")
+            else:
+                if not (url.startswith("http://") or url.startswith("https://")):
+                    url = f"https://{url}"
+                self.selected_file = url
+                self.conversion_page.update_file_info(url)
+                self.content_stack.set_visible_child_name("conversion")
+
+        dialog.destroy()
 
     def on_open_response(self, dialog, response):
         """Handle file chooser response."""
@@ -193,7 +252,10 @@ class ClarityWindow(Adw.ApplicationWindow):
         dialog.add_button("_Save", Gtk.ResponseType.ACCEPT)
 
         # Set default filename
-        if self.selected_file:
+        if self.selected_file and not (
+            self.selected_file.startswith("http://")
+            or self.selected_file.startswith("https://")
+        ):
             original_name = Path(self.selected_file).stem
             dialog.set_current_name(f"{original_name}.md")
         else:
